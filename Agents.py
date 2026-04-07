@@ -23,17 +23,17 @@ class HomeBuyer(Agent):
         if self.has_home:
             return
 
-        # 1. Cumpărătorul se mută pe o celulă vecină (la întâmplare), nu pe una izolată!
+        # 1. Cumpărătorul se mută pe o celulă vecină (la întâmplare), nu pe una izolată.
         vecini = self.model.grid.get_neighborhood(self.pos, moore=True, include_center=False)
         noua_pozitie = self.random.choice(vecini)
         self.model.grid.move_agent(self, noua_pozitie)
 
-        # 1. ANALIZA MEDIULUI (Logicǎ Agenticǎ)
+        # 1. ANALIZA MEDIULUI (Logicǎ bazatǎ pe agent)
         # Agentul verifică starea "lumii" din model.py
         sentiment = self.model.market_sentiment
         dobanda = self.model.interest_rate
 
-        #2.1 Daca dobanda e sub 3%, cumparam chiar daca indicele bursei e negativ
+        #2.1 Daca dobanda e sub 3%, cumpǎram chiar daca indicele bursei e negativ
         if dobanda < LIMITA_DOBANDA_PROFITABILA:
             self.cauta_si_negociaza()
             return
@@ -61,7 +61,7 @@ class HomeBuyer(Agent):
             if type(other).__name__ == "Seller" and not other.is_sold:
                 # Verificăm dacă bugetul cumpărătorului acoperă prețul cerut
                 if self.budget >= other.price:
-                    # --- ACEASTA ESTE LINIA ESENȚIALĂ ---
+
                     # Raportăm prețul către model înainte ca tranzacția să se finalizeze
                     self.model.preturi_tranzactii_pas_curent.append(other.price)
                     # ------------------------------------

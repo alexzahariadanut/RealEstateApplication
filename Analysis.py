@@ -2,7 +2,7 @@ from mesa.batchrunner import batch_run
 from Model import RealEstateModel
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns # Pentru grafice comparative mai frumoase
+import seaborn as sns # Pentru grafice comparative
 
 # 1. Configurarea experimentului comparativ
 params = {

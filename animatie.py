@@ -14,6 +14,7 @@ model = RealEstateModel(**params)
 
 # --- CONFIGURARE LAYOUT (GridSpec) ---
 fig = plt.figure(figsize=(16, 9))
+
 # Împărțim fereastra: harta ia toată stânga, dreapta e împărțită sus-jos
 gs = gridspec.GridSpec(2, 2, width_ratios=[1.2, 1], height_ratios=[1, 1])
 fig.subplots_adjust(bottom=0.25, hspace=0.35, wspace=0.2)
@@ -87,7 +88,7 @@ def update(frame):
     istoric_tranzactii.append(p_tranz)
     istoric_dobanda.append(model.interest_rate * 100)
 
-    # --- 1. RANDAȚI HARTA ---
+    # --- 1. RANDARE HARTĂ ---
     ax_harta.clear()
     current_grid_size = model.grid.width
     ax_harta.set_xlim(-0.5, current_grid_size - 0.5)
@@ -109,7 +110,7 @@ def update(frame):
     ax_harta.set_title(
         f"Harta {current_grid_size}x{current_grid_size} | Pas {model.steps} | Sentiment: {model.market_sentiment}")
 
-    # --- 2. RANDAȚI GRAFICUL LINIAR ---
+    # --- 2. RANDARE GRAFIC LINIAR ---
     ax_grafic.clear();
     ax_dobanda.clear()
     l1, = ax_grafic.plot(istoric_pasi, istoric_oferta, color='purple', label="Preț Mediu Cerut", linewidth=2)
@@ -120,7 +121,7 @@ def update(frame):
     ax_grafic.set_title("Evoluția Prețurilor vs Dobândă", fontsize=10)
     ax_grafic.legend(handles=[l1, scat, l2], loc='upper left', fontsize=7)
 
-    # --- 3. RANDAȚI HISTOGRAMA (CERERE VS OFERTĂ) ---
+    # --- 3. RANDARE HISTOGRAMA (CERERE VS OFERTĂ) ---
     ax_hist.clear()
 
     # Colectăm bugetele și prețurile actuale din piață

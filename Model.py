@@ -23,7 +23,7 @@ class RealEstateModel(Model):
 
     def __init__(self, **kwargs):
         # Extragem valorile pentru noi, în siguranță
-        # 1. EXTRAGEM (ȘI ȘTERGEM) toți parametrii din kwargs ca să nu supere Mesa
+        # 1. EXTRAGEM (ȘI ȘTERGEM) toți parametrii din kwargs ca să nu avem erori cu Mesa
         width = kwargs.pop("width", 10)
         height = kwargs.pop("height", 10)
         num_buyers = kwargs.pop("num_buyers", 50)
