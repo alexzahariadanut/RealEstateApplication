@@ -1,5 +1,7 @@
-mesa
+mesa == 3.5.0
 matplotlib
 pandas
 seaborn
 numpy
+networkx
+streamlit

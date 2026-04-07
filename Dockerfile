@@ -1,5 +1,5 @@
 # Folosim o imagine oficială și ușoară de Python
-FROM python:3.10-slim
+FROM python:3.12-slim
 
 # Setăm directorul de lucru în interiorul containerului
 WORKDIR /app
@@ -13,6 +13,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copiem tot restul codului sursă în container
 COPY . .
 
-# Setăm comanda implicită atunci când pornește containerul
-# Implicit, îl vom pune să ruleze analiza de date
-CMD ["python", "Analysis.py"]
+# Expunem portul standard folosit de serverul web Streamlit
+EXPOSE 8501
+
+# Comanda de lansare a serverului pe localhost
+CMD ["streamlit", "run", "web_animatie.py", "--server.port=8501", "--server.address=0.0.0.0"]
