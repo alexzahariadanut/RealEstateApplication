@@ -13,7 +13,7 @@ params = {
     "dobanda_pornire": [0.02, 0.10] # Aici definim cele două scenarii
 }
 
-print("Se rulează experimentul comparativ (2 scenarii x 10 repetiții)...")
+print("Se rulează experimentul comparativ (2 scenarii x 10 repetiții)network...")
 results = batch_run(
 RealEstateModel,
     parameters=params,
@@ -34,7 +34,10 @@ plt.ylabel("Preț Mediu (Euro)")
 plt.legend(title="Dobândă Inițială")
 plt.grid(True, alpha=0.3)
 plt.savefig("comparatie_scenarii_pret.png")
-plt.show()
+try:
+    plt.show()
+except Exception:
+    print("Mediul nu are ecran (ex: Docker). Graficul a fost salvat direct pe disc.")
 
 # 3. Vizualizarea impactului asupra Tranzacțiilor
 plt.figure(figsize=(12, 6))
@@ -43,4 +46,7 @@ plt.title("Total Tranzacții după 2 ani în funcție de Dobândă")
 plt.xlabel("Scenariu Dobândă")
 plt.ylabel("Număr Case Vândute")
 plt.savefig("comparatie_tranzactii_box.png")
-plt.show()
+try:
+    plt.show()
+except Exception:
+    print("Mediul nu are ecran (ex: Docker). Graficul a fost salvat direct pe disc.")

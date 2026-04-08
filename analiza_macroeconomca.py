@@ -7,7 +7,15 @@ LATIME, INALTIME = 10, 10
 CUMPARATORI, VANZATORI = 50, 50
 PASI_SIMULARE = 60 # 5 ani de zile (60 luni)
 
-model = RealEstateModel(LATIME, INALTIME, CUMPARATORI, VANZATORI)
+# Inițializăm modelul folosind argumente numite (keyword arguments)
+model = RealEstateModel(
+    width=LATIME,
+    height=INALTIME,
+    num_buyers=CUMPARATORI,
+    num_sellers=VANZATORI,
+    dobanda_pornire=0.05,  # 5% dobândă inițială
+    budget=100000          # 100.000 Euro buget implicit
+)
 
 print("Simularea rulează...")
 for i in range(PASI_SIMULARE):
@@ -15,6 +23,7 @@ for i in range(PASI_SIMULARE):
 
 # 2. Extragerea datelor
 df = model.datacollector.get_model_vars_dataframe()
+print("Coloanele exportate de model sunt:", df.columns.tolist())
 
 # 3. Crearea Graficelor
 fig, ax1 = plt.subplots(figsize=(12, 6))
@@ -39,14 +48,21 @@ ax2.tick_params(axis='y', labelcolor=color_int)
 plt.title('Corelația între Piața de Capital și Politica Monetară')
 plt.grid(True, alpha=0.3)
 plt.savefig("grafic_corelatie_economica.png") # Salvează imaginea pentru disertație
-plt.show()
+try:
+    plt.show()
+except Exception:
+    print("Mediul nu are ecran (ex: Docker). Graficul a fost salvat direct pe disc.")
 
 # 4. Grafic pentru Prețul Mediu al Caselor
 plt.figure(figsize=(10, 5))
-plt.plot(df.index, df['Pret_Mediu'], color='green', label='Preț Mediu Imobile')
+plt.plot(df.index, df['Pret_Mediu_Oferta'], color='green', label='Preț Mediu Imobile')
 plt.xlabel('Luni')
 plt.ylabel('Preț (Euro)')
 plt.title('Evoluția Prețurilor Imobiliare în funcție de Ciclul Economic')
 plt.legend()
 plt.savefig("evolutie_preturi_case.png")
-plt.show()
+plt.savefig("evolutie_preturi_case.png")
+try:
+    plt.show()
+except Exception:
+    print("Mediul nu are ecran (ex: Docker). Graficul a fost salvat direct pe disc.")

@@ -12,6 +12,20 @@ PRAG_CRIZA_BURSA = -0.02
 CRESTERE_DOBANDA_CRIZA = 0.002
 VOLATILITATE_MAXIMA = 0.05
 
+# Funcții care simulează comportamentul pieței de capital
+# Dacă dobânda crește, bursa tinde să scadă ușor, cu mici variații aleatorii.
+def get_sp500(model):
+    # O valoare de bază imaginară de 4000 puncte
+    fluctuatie = random.uniform(-0.02, 0.03) # Între -2% și +3% pe lună
+    impact_dobanda = model.interest_rate * 1000
+    return 4000 * (1 + fluctuatie) - impact_dobanda
+
+def get_bursa_locala(model):
+    # O valoare de bază imaginară de 12000 puncte (ex: Indicele BET)
+    fluctuatie = random.uniform(-0.03, 0.04)
+    impact_dobanda = model.interest_rate * 3000
+    return 12000 * (1 + fluctuatie) - impact_dobanda
+
 class RealEstateModel(Model):
     """
     Modelul principal care gestionează piața imobiliară,
@@ -49,6 +63,8 @@ class RealEstateModel(Model):
         self.datacollector = DataCollector(
             model_reporters= {
                 "Pret_Mediu_Oferta": lambda m: m.get_pret_mediu(m),
+                "SP500": get_sp500,
+                "Bursa_Locala": get_bursa_locala,
                 "Dobanda": lambda m: m.interest_rate,
                 "Sentiment": lambda m: 1 if m.market_sentiment == "Optimist" else 0,
                 "Tranzactii_Noi": lambda m: len(m.preturi_tranzactii_pas_curent),
