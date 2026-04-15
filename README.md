@@ -14,13 +14,13 @@ Acest proiect reprezintă un laborator de simulare a pieței imobiliare, dezvolt
 Proiectul este organizat în module clare și decuplate:
 
 * **🧠 Nucleul Simulării:**
-  * `Agents.py` - Definește clasele și comportamentul actorilor (HomeBuyer și Seller).
-  * `Model.py` - Gestionează mediul de simulare, aplică regulile macroeconomice la fiecare pas și colectează datele.
+  * `agents.py` - Definește clasele și comportamentul actorilor (HomeBuyer și Seller).
+  * `model.py` - Gestionează mediul de simulare, aplică regulile macroeconomice la fiecare pas și colectează datele.
 * **🖥️ Interfețele Vizuale:**
-  * `web_animatie.py` - Dashboard-ul web modern (Streamlit) cu indicatoare live (KPIs) pentru vizualizare dinamică.
-  * `Animatie.py` - Versiunea locală (Matplotlib) pentru rulare și testare rapidă pe mașina gazdă.
+  * `web_animation.py` - Dashboard-ul web modern (Streamlit) cu indicatoare live (KPIs) pentru vizualizare dinamică.
+  * `animation.py` - Versiunea locală (Matplotlib) pentru rulare și testare rapidă pe mașina gazdă.
 * **📊 Generatoare de Rapoarte:**
-  * `generator_rapoarte.py` - Script unificat care rulează automat o analiză macroeconomică pe termen lung (5 ani) și un experiment comparativ (Batch Run), exportând graficele finale (.png).
+  * `generator_raports.py` - Script unificat care rulează automat o analiză macroeconomică pe termen lung (5 ani) și un experiment comparativ (Batch Run), exportând graficele finale (.png).
 * **⚙️ Infrastructură:**
   * `Dockerfile` & `requirements.txt` - Configurațiile pentru construirea automată a mediului izolat.
 
