@@ -4,12 +4,12 @@ from matplotlib.animation import FuncAnimation
 from matplotlib.widgets import Slider, Button
 from matplotlib.lines import Line2D
 import numpy as np
-from Model import RealEstateModel
-from Agents import HomeBuyer, Seller
+from model import RealEstateModel
+from agents import HomeBuyer, Seller
 
 # --- 1. CONFIGURARE INIȚIALĂ ---
 GRID_SIZE = 20
-# Am adăugat "dobanda_pornire" pentru a corespunde cu noul tău Model.py
+# Am adăugat "dobanda_pornire" pentru a corespunde cu noul agent refactorizat model.py
 params = {
     "width": GRID_SIZE,
     "height": GRID_SIZE,

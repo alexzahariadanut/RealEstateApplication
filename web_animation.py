@@ -4,7 +4,7 @@ import matplotlib.gridspec as gridspec
 from matplotlib.lines import Line2D
 import numpy as np
 import time
-from Model import RealEstateModel
+from model import RealEstateModel
 
 # --- 1. CONFIGURARE PAGINĂ WEB ---
 st.set_page_config(page_title="Simulare Imobiliară", layout="wide")

@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from mesa.batchrunner import batch_run
-from Model import RealEstateModel
+from model import RealEstateModel
 
 def salvare_grafic_sigur(nume_fisier):
     """Funcție ajutătoare pentru a salva și afișa graficele în siguranță pe medii Docker."""
@@ -99,7 +99,7 @@ salvare_grafic_sigur("grafic_3_comparatie_scenarii_pret.png")
 
 # 4. Impactul asupra Tranzacțiilor
 plt.figure(figsize=(12, 6))
-# "Tranzactii_Totale" există în Model.py -> DataCollector
+# "Tranzactii_Totale" există în model.py -> DataCollector
 if "Tranzactii_Totale" in df_batch.columns:
     sns.boxplot(data=df_batch[df_batch["Step"] == 15], x="dobanda_pornire", y="Tranzactii_Totale")
     plt.title("Total Tranzacții după 15 luni în funcție de Dobândă")

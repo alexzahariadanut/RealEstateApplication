@@ -3,7 +3,7 @@ import mesa
 from mesa import Model
 from mesa.space import MultiGrid
 from mesa.datacollection import DataCollector
-from Agents import HomeBuyer, Seller
+from agents import HomeBuyer, Seller
 
 #---- Configurare Parametri Economici ----
 VALOARE_INITIALA_BVB = 1000.0
