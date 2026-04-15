@@ -42,6 +42,6 @@ docker run -p 8501:8501 simulare-imobiliara
 ### 3. Generarea Graficelor pentru Disertație
 Pentru a rula experimentele de fundal și a exporta automat graficele .png pe unitatea locală, rulați:
 ```bash
-docker run -v ${PWD}:/app simulare-imobiliara python generator_raports.py
+docker run -v ${PWD}:/app simulare-imobiliara python generator_reports.py
 ```
 
