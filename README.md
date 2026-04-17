@@ -20,7 +20,7 @@ Proiectul este organizat în module clare și decuplate:
   * `web_animation.py` - Dashboard-ul web modern (Streamlit) cu indicatoare live (KPIs) pentru vizualizare dinamică.
   * `animation.py` - Versiunea locală (Matplotlib) pentru rulare și testare rapidă pe mașina gazdă.
 * **📊 Generatoare de Rapoarte:**
-  * `generator_raports.py` - Script unificat care rulează automat o analiză macroeconomică pe termen lung (5 ani) și un experiment comparativ (Batch Run), exportând graficele finale (.png).
+  * `generator_reports.py` - Script unificat care rulează automat o analiză macroeconomică pe termen lung (5 ani) și un experiment comparativ (Batch Run), exportând graficele finale (.png).
 * **⚙️ Infrastructură:**
   * `Dockerfile` & `requirements.txt` - Configurațiile pentru construirea automată a mediului izolat.
 
