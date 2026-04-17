@@ -17,4 +17,4 @@ COPY . .
 EXPOSE 8501
 
 # Comanda de lansare a serverului pe localhost
-CMD ["streamlit", "run", "web_animatie.py", "--server.port=8501", "--server.address=0.0.0.0"]
+CMD ["streamlit", "run", "web_animation.py", "--server.port=8501", "--server.address=0.0.0.0"]
