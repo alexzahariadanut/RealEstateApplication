@@ -132,8 +132,15 @@ def update(frame):
         Line2D([0], [0], marker='*', color='w', label='Vândut', markerfacecolor='green', markersize=12)
     ], loc='upper right', fontsize=8)
 
-    sentiment = getattr(model, 'market_sentiment', 'N/A')
-    ax_harta.set_title(f"Harta {current_grid_size}x{current_grid_size} | Pas {model.steps} | Sentiment: {sentiment}")
+    # Formatare nouă pentru sentimentul continuu
+    sentiment_val = getattr(model, 'market_sentiment', 0.5)
+    if isinstance(sentiment_val, float):
+        stare = "Optimist" if sentiment_val > 0.6 else ("Anxios" if sentiment_val < 0.4 else "Neutru")
+        sentiment_text = f"{sentiment_val:.2f} ({stare})"
+    else:
+        sentiment_text = str(sentiment_val)
+
+    ax_harta.set_title(f"Harta {current_grid_size}x{current_grid_size} | Pas {model.steps} | Sentiment: {sentiment_text}")
 
     # RANDARE GRAFIC LINIAR
     ax_grafic.clear()

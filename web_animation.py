@@ -140,8 +140,13 @@ ax_harta.legend(handles=[
     Line2D([0], [0], marker='*', color='w', label='Vândut', markerfacecolor='green', markersize=12)
 ], loc='upper right', fontsize=8)
 
-sentiment = getattr(model, 'market_sentiment', 'N/A')
-ax_harta.set_title(f"Harta {model.grid.width}x{model.grid.width} | Pas {model.steps} | Sentiment: {sentiment}")
+# Formatare pentru sentimentul continuu în Streamlit
+sentiment_val = getattr(model, 'market_sentiment', 0.5)
+stare = "Optimist" if sentiment_val > 0.6 else ("Anxios" if sentiment_val < 0.4 else "Neutru")
+sentiment_text = f"{sentiment_val:.2f} ({stare})"
+
+# Folosim s_dim pentru dimensiunea hărții
+ax_harta.set_title(f"Harta {s_dim}x{s_dim} | Pas {model.steps} | Sentiment: {sentiment_text}")
 
 # Grafic Liniar
 if st.session_state.istoric_pasi:

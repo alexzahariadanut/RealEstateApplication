@@ -1,4 +1,5 @@
 from mesa import Agent
+import random
 
 # --- CONFIGURARE COMPORTAMENT AGENȚI ---
 LIMITA_DOBANDA_ACCEPTABILA = 0.08  # 8% (peste asta, agenții nu mai iau credite)
@@ -18,6 +19,12 @@ class HomeBuyer(Agent):
         self.risk_appetite = risk_appetite  # 0 = Prudent, 1 = Speculator
         self.has_home = False
 
+        # --- PERSONALITATE AGENT (Valoare Globală +/- Epsilon) ---
+        # Unii acceptă maxim 6% dobândă, alții merg până la 10%
+        self.limita_dobanda_acceptabila = random.uniform(0.06, 0.10)
+        # Pragul de sentiment la care intră în panică (0.2 = foarte greu de speriat, 0.4 = fricos)
+        self.prag_panica = random.uniform(0.20, 0.40)
+
     def step(self):
         # Dacă agentul are deja casă, nu mai caută alta (în acest model simplificat)
         if self.has_home:
@@ -25,59 +32,35 @@ class HomeBuyer(Agent):
 
         # 1. Cumpărătorul se mută pe o celulă vecină (la întâmplare), nu pe una izolată.
         vecini = self.model.grid.get_neighborhood(self.pos, moore=True, include_center=False)
-        noua_pozitie = self.random.choice(vecini)
-        self.model.grid.move_agent(self, noua_pozitie)
+        if vecini:
+            self.model.grid.move_agent(self, random.choice(vecini))
 
         # 1. ANALIZA MEDIULUI (Logicǎ bazatǎ pe agent)
         # Agentul verifică starea "lumii" din model.py
         sentiment = self.model.market_sentiment
         dobanda = self.model.interest_rate
 
-        #2.1 Daca dobanda e sub 3%, cumpǎram chiar daca indicele bursei e negativ
-        if dobanda < LIMITA_DOBANDA_PROFITABILA:
-            self.cauta_si_negociaza()
-            return
+        # Analiza macroeconomică folosind pragurile personale
+        # Dacă dobânda e prea mare SAU sentimentul pieței e prea scăzut (sub pragul lui de panică)
+        if self.model.interest_rate > self.limita_dobanda_acceptabila or self.model.market_sentiment < self.prag_panica:
+            return  # Refuză să cumpere luna aceasta
 
-        # 2.2 PROCESUL DE DECIZIE
-        # Dacă sentimentul e 'Anxios', cumpărătorul devine precaut și nu cumpără,
-        # preferând să păstreze lichiditățile.
-        if sentiment == "Anxios" or dobanda > LIMITA_DOBANDA_ACCEPTABILA:
-            #print(f"Agent {self.unique_id}: Sentiment negativ. Aștept condiții mai bune.")
-            return
-
-        # Dacă dobânda e prea mare (ex: > 8%), creditul e prea scump
-        if dobanda > LIMITA_DOBANDA_ACCEPTABILA:
-            #print(f"Agent {self.unique_id}: Dobânzi prea mari ({dobanda:.2%}). Pas.")
-            return
-
-        # 3. ACȚIUNEA: Căutarea unei locuințe
-        self.cauta_si_negociaza()
-
-    def cauta_si_negociaza(self):
-        # Scanăm celulele vecine pentru a găsi un vânzător
-        celule_vizibile = self.model.grid.get_neighbors(self.pos, moore=True, include_center=True)
-
-        for other in celule_vizibile:
-            if type(other).__name__ == "Seller" and not other.is_sold:
-                # Verificăm dacă bugetul cumpărătorului acoperă prețul cerut
+        # Logica de achiziție
+        cell_mates = self.model.grid.get_cell_list_contents([self.pos])
+        for other in cell_mates:
+            if isinstance(other, Seller) and not other.is_sold:
                 if self.budget >= other.price:
-
-                    # Raportăm prețul către model înainte ca tranzacția să se finalizeze
                     self.model.preturi_tranzactii_pas_curent.append(other.price)
-                    # ------------------------------------
-
                     self.has_home = True
                     other.is_sold = True
-
-                    # Cumpărătorul se mută pe poziția casei achiziționate
                     self.model.grid.move_agent(self, other.pos)
                     break
 
 class Seller(Agent):
     """
     Agentul Vânzător: Reprezintă oferta.
-    Își ajustează prețul în funcție de cât de repede vrea să vândă și de economie.
-    """
+    Își ajustează prețul pe baza răbdării personale și a climatului economic.
+        """
 
     def __init__(self, model, price):
         super().__init__(model)
@@ -86,6 +69,14 @@ class Seller(Agent):
         self.is_sold = False
         self.time_on_market = 0
 
+        # --- PERSONALITATE AGENT (Valoare Globală +/- Epsilon) ---
+        # Unii vânzători așteaptă 2 luni, alții 4 luni până să lase din preț
+        self.timp_asteptare_max = random.randint(2, 4)
+        # Reducerea variază între -0.5% și -1.5% pe lună
+        self.reducere_pret = random.uniform(0.985, 0.995)
+        # Pragul la care lasă din preț de disperare din cauza economiei
+        self.prag_panica = random.uniform(0.30, 0.50)
+
     def step(self):
         if self.is_sold:
             return
@@ -93,11 +84,7 @@ class Seller(Agent):
         self.time_on_market += 1
 
         # LOGICA DE PREȚ:
-        # Scade prețul doar dacă este peste limita minimă
         if self.price > self.limit_price:
-            if self.time_on_market > TIMP_ASTEPTARE_VANZATOR or self.model.market_sentiment == "Anxios":
-                    self.price *= REDUCERE_PRET_VANZATOR  # Scade cu 1%
-
-        # Dacă economia e în criză (Anxios), mai scade prețul cu încă 1% forțat
-        if self.model.market_sentiment == "Anxios":
-            self.price *= REDUCERE_PRET_VANZATOR
+            # Scade prețul dacă și-a pierdut răbdarea SAU dacă sentimentul general e sub pragul lui de panică
+            if self.time_on_market > self.timp_asteptare_max or self.model.market_sentiment < self.prag_panica:
+                self.price *= self.reducere_pret

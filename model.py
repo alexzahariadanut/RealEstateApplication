@@ -1,123 +1,137 @@
 import random
 import mesa
+import yfinance as yf
+import ssl
 from mesa import Model
 from mesa.space import MultiGrid
 from mesa.datacollection import DataCollector
 from agents import HomeBuyer, Seller
 
-#---- Configurare Parametri Economici ----
-VALOARE_INITIALA_BVB = 1000.0
-VALOARE_INITIALA_SP500 = 4000.0
-PRAG_CRIZA_BURSA = -0.02
-CRESTERE_DOBANDA_CRIZA = 0.002
-VOLATILITATE_MAXIMA = 0.05
+# Ignora erorile de certificat SSL la nivel de Python
+ssl._create_default_https_context = ssl._create_unverified_context
 
-# Funcții care simulează comportamentul pieței de capital
-# Dacă dobânda crește, bursa tinde să scadă ușor, cu mici variații aleatorii.
+def get_pret_mediu(model):
+    preturi = [a.price for a in model.agents if isinstance(a, Seller) and not a.is_sold]
+    return sum(preturi) / len(preturi) if preturi else 0
+
+
 def get_sp500(model):
-    # O valoare de bază imaginară de 4000 puncte
-    fluctuatie = random.uniform(-0.02, 0.03) # Între -2% și +3% pe lună
-    impact_dobanda = model.interest_rate * 1000
-    return 4000 * (1 + fluctuatie) - impact_dobanda
+    index = min(model.steps, len(model.istoric_sp500) - 1)
+    return float(model.istoric_sp500[index])
+
 
 def get_bursa_locala(model):
-    # O valoare de bază imaginară de 12000 puncte (ex: Indicele BET)
-    fluctuatie = random.uniform(-0.03, 0.04)
-    impact_dobanda = model.interest_rate * 3000
-    return 12000 * (1 + fluctuatie) - impact_dobanda
+    index = min(model.steps, len(model.istoric_bursa_locala) - 1)
+    return float(model.istoric_bursa_locala[index])
+
 
 class RealEstateModel(Model):
-    """
-    Modelul principal care gestionează piața imobiliară,
-    indicatorii macroeconomici și bursa.
-    """
+    def __init__(self, width, height, num_buyers, num_sellers, dobanda_pornire=0.05, budget=100000):
+        # Obligatoriu în Mesa 3.0: apelăm constructorul clasei de bază
+        super().__init__()
 
-    # Definim steps la nivel de clasă pentru a evita eroarea de tip object
-    steps = 0
+        self.num_buyers = num_buyers
+        self.num_sellers = num_sellers
+        self.grid = MultiGrid(width, height, True)
+        self.interest_rate = dobanda_pornire
 
-    def __init__(self, **kwargs):
-        # Extragem valorile pentru noi, în siguranță
-        # 1. EXTRAGEM (ȘI ȘTERGEM) toți parametrii din kwargs ca să nu avem erori cu Mesa
-        width = kwargs.pop("width", 10)
-        height = kwargs.pop("height", 10)
-        num_buyers = kwargs.pop("num_buyers", 50)
-        num_sellers = kwargs.pop("num_sellers", 50)
-        dobanda_pornire = kwargs.pop("dobanda_pornire", 0.05)
-        avg_budget = kwargs.pop("budget", 100000)  # Extragem și noul parametru budget
+        # Sentimentul este o valoare continuă în intervalul [0, 1]. Pornim de la 0.5 (Neutru)
+        self.market_sentiment = 0.5
 
-        super().__init__(**kwargs)
-
-        # 2. Inițializarea Spațiului (Harta orașului)
-        self.grid = MultiGrid(width, height, torus=True)
-        self.space = self.grid  # Referință pentru componentele de vizualizare
         self.steps = 0
+        self.preturi_tranzactii_pas_curent = []
 
-        # 3. Parametri Macroeconomici Inițiali
-        self.interest_rate = dobanda_pornire       # Folosim valoarea primită ca argument
-        self.stock_index = VALOARE_INITIALA_BVB    # Bursa Locală (ex: BET)
-        self.sp500_index = VALOARE_INITIALA_SP500  # Bursa Internațională
-        self.market_sentiment = "Optimist"
-        self.preturi_tranzactii_pas_curent = []  # stocăm tranzacțiile din luna curentă
+        # --- INTEGRARE DATE REALE (Yahoo Finance) ---
+        print("Se descarcă datele financiare...")
+        self.istoric_sp500 = self._descarca_date_reale("^GSPC", 100)
+        # --- INTEGRARE DATE REALE (Yahoo Finance) ---
+        print("Se descarcă datele financiare...")
+        self.istoric_sp500 = self._descarca_date_reale("^GSPC", 100)
+        self.istoric_bursa_locala = self._descarca_date_reale("EEM", 100)
 
-        #4. Extragere date pentru raport
+        # ADAUGĂ ACESTE DOUĂ LINII PENTRU TESTARE:
+        print(f"Test SP500 (primele 5 luni): {self.istoric_sp500[:5]}")
+        print(f"Test Bursa (primele 5 luni): {self.istoric_bursa_locala[:5]}")
+        self.istoric_bursa_locala = self._descarca_date_reale("EEM", 100)  # Proxy pentru piața locală
+
         self.datacollector = DataCollector(
-            model_reporters= {
-                "Pret_Mediu_Oferta": lambda m: m.get_pret_mediu(m),
+            model_reporters={
+                "Pret_Mediu_Oferta": get_pret_mediu,
                 "SP500": get_sp500,
                 "Bursa_Locala": get_bursa_locala,
-                "Dobanda": lambda m: m.interest_rate,
-                "Sentiment": lambda m: 1 if m.market_sentiment == "Optimist" else 0,
-                "Tranzactii_Noi": lambda m: len(m.preturi_tranzactii_pas_curent),
-                "Tranzactii_Totale": lambda m: len([a for a in m.agents if type(a).__name__ == "Seller" and a.is_sold])
+                "Dobanda": lambda m: m.interest_rate * 100,
+                "Sentiment_Piata": lambda m: m.market_sentiment
             }
         )
-        # 5.1. PLASARE CUMPĂRĂTORI
-        for i in range(num_buyers):
-            buget_indiv = avg_budget * random.uniform(0.7, 1.3)
-            buyer = HomeBuyer(self, buget_indiv, random.random())
-            self.grid.place_agent(buyer, (self.random.randrange(width), self.random.randrange(height)))
 
-        # 5.2 PLASARE VÂNZĂTORI
-        for i in range(num_sellers):
-            price = random.randint(80000, 130000)
-            seller = Seller(self, price)
-            self.grid.place_agent(seller, (self.random.randrange(width), self.random.randrange(height)))
+        # Creare Agenți Cumpărători
+        for i in range(self.num_buyers):
+            b = HomeBuyer(self, budget, random.choice([0, 1]))
+            # (Nu mai este nevoie de self.schedule.add)
+            x, y = self.random.randrange(self.grid.width), self.random.randrange(self.grid.height)
+            self.grid.place_agent(b, (x, y))
 
-        self.datacollector.collect(self)
+        # Creare Agenți Vânzători
+        for i in range(self.num_sellers):
+            pret_initial = random.uniform(budget * 0.8, budget * 1.5)
+            s = Seller(self, pret_initial)
+            # (Nu mai este nevoie de self.schedule.add)
+            x, y = self.random.randrange(self.grid.width), self.random.randrange(self.grid.height)
+            self.grid.place_agent(s, (x, y))
 
-    def get_pret_mediu(self, model):
-        preturi = [a.price for a in model.agents if isinstance(a,Seller) and not a .is_sold]
-        return sum(preturi) / len(preturi) if preturi else 0
+    def _descarca_date_reale(self, ticker, luni_necesare):
+        try:
+            # Încercăm să descărcăm datele oficiale
+            data = yf.download(ticker, period="10y", interval="1mo", progress=False)
+
+            # Verificăm dacă Yahoo ne-a dat un tabel gol sau blocat
+            if data is None or data.empty or 'Close' not in data:
+                raise ValueError("Yahoo a blocat cererea (date goale).")
+
+            valori_inchidere = data['Close'].dropna().values.flatten().tolist()
+
+            # Ne asigurăm că avem cel puțin o valoare validă înainte de a o accesa
+            if not valori_inchidere:
+                raise ValueError("Lista de prețuri este complet goală.")
+
+            if len(valori_inchidere) >= luni_necesare:
+                return valori_inchidere[-luni_necesare:]
+
+            return valori_inchidere + [valori_inchidere[-1]] * (luni_necesare - len(valori_inchidere))
+
+        except Exception as e:
+            # DACA API-UL PICA SAU DA EROARE DE SSL, GENERĂM DATE REALISTE (BACKUP)
+            print(f"API indisponibil pentru {ticker} ({e}). Se folosesc date simulate realiste.")
+
+            start_val = 4000.0 if ticker == "^GSPC" else 12000.0
+            istoric_simulat = [start_val]
+
+            for _ in range(luni_necesare - 1):
+                # Generăm o fluctuație lunară realistă (între -3% și +3.5%, cu tendință ușor crescătoare)
+                fluctuatie = random.uniform(-0.03, 0.035)
+                noua_valoare = istoric_simulat[-1] * (1 + fluctuatie)
+                istoric_simulat.append(noua_valoare)
+
+            return istoric_simulat
 
     def step(self):
-        """
-        Avansează simularea cu un pas (echivalentul unei luni).
-        """
         self.steps += 1
         self.preturi_tranzactii_pas_curent = []
 
-        # Dinamica Bursei (Random Walk)
-        change_intl = random.uniform(-VOLATILITATE_MAXIMA, VOLATILITATE_MAXIMA)
-        self.sp500_index *= (1 + change_intl)
-        self.market_sentiment = "Anxios" if change_intl < PRAG_CRIZA_BURSA else "Optimist"
+        # --- ACTUALIZARE SENTIMENT CONTINUU ---
+        # Calculăm fluctuația bursei față de luna anterioară pentru a influența sentimentul
+        valoare_curenta = get_sp500(self)
+        if self.steps > 1:
+            val_trecuta = self.istoric_sp500[min(self.steps - 2, len(self.istoric_sp500) - 1)]
+            fluctuatie = (valoare_curenta - val_trecuta) / val_trecuta
+        else:
+            fluctuatie = 0.0
 
-        # Dinamica Dobânzii Automate (Slider-ul va putea suprascrie asta)
-        if self.market_sentiment == "Anxios":
-            self.interest_rate += CRESTERE_DOBANDA_CRIZA
+        # Mapăm fluctuația (-5% la +5%) într-o modificare a sentimentului între [0, 1]
+        sentiment_brut = 0.5 + (fluctuatie * 10)
+        self.market_sentiment = max(0.0, min(1.0, sentiment_brut))
 
-        self.interest_rate = max(0.01, min(0.20, self.interest_rate))
-
+        # NOU ÎN MESA 3.0: Activăm toți agenții într-o ordine aleatorie
         self.agents.shuffle_do("step")
+
         self.datacollector.collect(self)
-
-        # --- F. RAPORTARE ÎN CONSOLĂ ---
-        #self.afiseaza_raport()
-
-    def afiseaza_raport(self):
-        print(f"\n--- LUNA {self.steps} | Sentiment: {self.market_sentiment} ---")
-        print(f"S&P 500: {self.sp500_index:.2f} | Bursa Locala: {self.stock_index:.2f}")
-        print(f"Dobânda: {self.interest_rate:.2%}")
-
-        # Numărăm câte case s-au vândut
-        sold_count = sum(1 for a in self.agents if isinstance(a, Seller) and a.is_sold)
-        print(f"Tranzacții totale: {sold_count}")
